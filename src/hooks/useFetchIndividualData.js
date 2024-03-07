@@ -20,5 +20,5 @@ export default function useFetchIndividualData(id) {
     useEffect(() => {
         fetchIndividualData()
     },[])
-  return {error,individualVideoData,error}
+  return {error,individualVideoData,loading}
 }
