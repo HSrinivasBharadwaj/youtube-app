@@ -1,7 +1,9 @@
-import React from 'react'
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function VideoCard({ video }) {
   const { snippet, statistics } = video;
+  const navigate = useNavigate();
   const generateViewCount = (viewCount) => {
     const views = parseInt(viewCount);
     if (views >= 1000000) {
@@ -34,8 +36,11 @@ export default function VideoCard({ video }) {
       return 'Just now';
     }
   }
+  const goToWatchPage = (id) => {
+    navigate("/watch/"+id)
+  }
   return (
-    <div className='mt-5'>
+    <div className='mt-5' onClick={() => goToWatchPage(video.id)}>
       <img className='rounded-lg cursor-pointer w-72' src={snippet.thumbnails.high.url} alt={snippet.title} />
       <p className='text-[#0f0f0f] text-lg font-bold w-72 mt-3'>{snippet.title}</p>
       <p>{snippet.channelTitle}</p>
