@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { GiHamburgerMenu } from "react-icons/gi";
 import { LOGO_URL, AUTO_SUGGEST_API } from '../utils/constants';
 import { FaSearch, FaUser } from "react-icons/fa";
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { toggleMenuSideBar } from '../features/toggleMenu/toggleMenuSlice';
 import axios from 'axios';
+import { cacheResults } from '../features/toggleMenu/searchSlice';
 
 export default function Header() {
     const [suggestions, setSuggestions] = useState([]);
@@ -15,9 +16,17 @@ export default function Header() {
         dispatch(toggleMenuSideBar())
     }
 
+    const searchCache = useSelector(state => state.search);
+
+
     useEffect(() => {
         const timer = setTimeout(() => {
-            getSearchSuggestions()
+            if (searchCache[searchQuery]) {
+                setSuggestions(searchCache[searchQuery])
+            } else {
+                getSearchSuggestions()
+            }
+
         }, 200);
         return () => {
             clearTimeout(timer)
@@ -29,15 +38,15 @@ export default function Header() {
             const response = await axios.get(AUTO_SUGGEST_API + searchQuery);
             setSuggestions(response.data[1]);
             setShowSuggestions(true);
+            dispatch(cacheResults({
+                [searchQuery]: response.data[1]
+            }))
         } catch (error) {
-            console.log("error", error);
+            console.log(error);
             setShowSuggestions(false);
         }
     }
 
-    const hideSuggestions = () => {
-        setShowSuggestions(false);
-    }
 
     return (
         <header className='shadow-md p-5'>
@@ -63,8 +72,8 @@ export default function Header() {
                                 className='rounded-l-full border border-gray-500 h-8 w-72'
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                onBlur={hideSuggestions}
                                 onFocus={() => setShowSuggestions(true)}
+                                onBlur={() => setShowSuggestions(false)}
                             />
                         </a>
                     </li>
@@ -75,10 +84,12 @@ export default function Header() {
                     </li>
                     {/* Render the auto suggestions here */}
                     {showSuggestions && suggestions.length > 0 && (
-                        <ul className='absolute top-14  bg-white border border-gray-300 w-72 rounded shadow'>
-                            {suggestions.map((item, index) => (
-                                <li key={index} className='px-4 py-2 hover:bg-gray-100 cursor-pointer'>{item}</li>
-                            ))}
+                        <ul className='bg-white shadow-lg rounded-md w-72 p-3 border border-gray-500 absolute top-14'>
+                            {suggestions.map((suggestion) => {
+                                return (
+                                    <li key={suggestion} className='border-t-2 mt-2 hover:bg-gray-300 px-4 py-2'>{suggestion}</li>
+                                )
+                            })}
                         </ul>
                     )}
                 </ul>
