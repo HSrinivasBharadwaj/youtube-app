@@ -1,55 +1,94 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GiHamburgerMenu } from "react-icons/gi";
-import { LOGO_URL } from '../utils/constants';
+import { LOGO_URL, AUTO_SUGGEST_API } from '../utils/constants';
 import { FaSearch, FaUser } from "react-icons/fa";
 import { useDispatch } from 'react-redux';
 import { toggleMenuSideBar } from '../features/toggleMenu/toggleMenuSlice';
+import axios from 'axios';
 
 export default function Header() {
+    const [suggestions, setSuggestions] = useState([]);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const dispatch = useDispatch();
     const toggleSideBar = () => {
         dispatch(toggleMenuSideBar())
     }
-  return (
-    <header className='shadow-md p-5'>
-        <nav className='flex justify-between items-center'>
-            <ul className='flex items-center'>
-                <li>
-                    <a>
-                        <GiHamburgerMenu className='mr-5 text-2xl cursor-pointer' onClick={toggleSideBar} />
-                    </a>
-                </li>
-                <li>
-                    <a>
-                        <img className='w-28 h-10 cursor-pointer' src={LOGO_URL} alt='Youtube'/>
-                    </a>
-                </li>
-            </ul>
-            <ul className='flex items-center'>
-                <li>
-                    <a>
-                        <input 
-                            type='text'
-                            placeholder='Search'
-                            className='rounded-l-full border border-gray-500 h-8 w-72'
-                        />
-                    </a>
-                </li>
-                <li>
-                    <a>
-                        <FaSearch className='rounded-r-full border border-gray-500 h-8 w-10 text-xs cursor-pointer' />
-                    </a>
-                </li>
-            </ul>
-            <ul className='flex items-center'>
-                <li>
-                    <a>
-                        <FaUser className='text-2xl cursor-pointer'/>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-        
-    </header>
-  )
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            getSearchSuggestions()
+        }, 200);
+        return () => {
+            clearTimeout(timer)
+        }
+    }, [searchQuery])
+
+    const getSearchSuggestions = async () => {
+        try {
+            const response = await axios.get(AUTO_SUGGEST_API + searchQuery);
+            setSuggestions(response.data[1]);
+            setShowSuggestions(true);
+        } catch (error) {
+            console.log("error", error);
+            setShowSuggestions(false);
+        }
+    }
+
+    const hideSuggestions = () => {
+        setShowSuggestions(false);
+    }
+
+    return (
+        <header className='shadow-md p-5'>
+            <nav className='flex justify-between items-center'>
+                <ul className='flex items-center'>
+                    <li>
+                        <a>
+                            <GiHamburgerMenu className='mr-5 text-2xl cursor-pointer' onClick={toggleSideBar} />
+                        </a>
+                    </li>
+                    <li>
+                        <a>
+                            <img className='w-28 h-10 cursor-pointer' src={LOGO_URL} alt='Youtube' />
+                        </a>
+                    </li>
+                </ul>
+                <ul className='flex items-center'>
+                    <li>
+                        <a>
+                            <input
+                                type='text'
+                                placeholder='Search'
+                                className='rounded-l-full border border-gray-500 h-8 w-72'
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onBlur={hideSuggestions}
+                            />
+                        </a>
+                    </li>
+                    <li>
+                        <a>
+                            <FaSearch className='rounded-r-full border border-gray-500 h-8 w-10 text-xs cursor-pointer' />
+                        </a>
+                    </li>
+                    {/* Render the auto suggestions here */}
+                    {showSuggestions && suggestions.length > 0 && (
+                        <ul className='absolute top-14  bg-white border border-gray-300 w-72 rounded shadow'>
+                            {suggestions.map((item, index) => (
+                                <li key={index} className='px-4 py-2 hover:bg-gray-100 cursor-pointer'>{item}</li>
+                            ))}
+                        </ul>
+                    )}
+                </ul>
+                <ul className='flex items-center'>
+                    <li>
+                        <a>
+                            <FaUser className='text-2xl cursor-pointer' />
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </header>
+    )
 }
